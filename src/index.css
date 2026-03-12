@@ -1,0 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", "Noto Sans Bengali", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", "Noto Sans Bengali", ui-sans-serif, system-ui, sans-serif;
+  --color-app-bg: #030303;
+  --color-neon-purple: #a855f7;
+  --color-neon-gold: #fbbf24;
+}
+
+body {
+  background-color: var(--color-app-bg);
+  color: white;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.glass-panel {
+  background: rgba(20, 20, 20, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.text-gradient {
+  background: linear-gradient(to right, var(--color-neon-purple), var(--color-neon-gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Particle background animation */
+@keyframes float {
+  0% { transform: translateY(0px) translateX(0px); opacity: 0; }
+  50% { opacity: 0.3; }
+  100% { transform: translateY(-100px) translateX(20px); opacity: 0; }
+}
+
+@keyframes float-subtle {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float-subtle {
+  animation: float-subtle 4s ease-in-out infinite;
+}
+
+.particle {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: float 8s infinite linear;
+}
