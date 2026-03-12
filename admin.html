@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Video Universe — Admin Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #060609;
+    --surface: #0f0f18;
+    --surface2: #16161f;
+    --border: rgba(255,255,255,0.08);
+    --purple: #a855f7;
+    --blue: #3b82f6;
+    --pink: #ec4899;
+    --gold: #fbbf24;
+    --green: #22c55e;
+    --red: #ef4444;
+    --text: #f1f0ff;
+    --text2: #8b8aa0;
+  }
+  body { font-family: 'Outfit', 'Noto Sans Bengali', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* LOGIN */
+  #login-screen {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 30% 30%, rgba(168,85,247,0.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(59,130,246,0.1) 0%, transparent 60%), var(--bg);
+    z-index: 999;
+  }
+  .login-card {
+    width: 100%; max-width: 380px; padding: 40px 32px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
+    box-shadow: 0 0 80px rgba(168,85,247,0.15);
+    display: flex; flex-direction: column; align-items: center; gap: 24px;
+  }
+  .login-logo { width: 70px; height: 70px; border-radius: 18px; background: linear-gradient(135deg, #7c3aed, #2563eb); display: flex; align-items: center; justify-content: center; font-size: 32px; box-shadow: 0 0 30px rgba(124,58,237,0.4); }
+  .login-title { font-size: 22px; font-weight: 800; letter-spacing: 0.05em; background: linear-gradient(135deg, #fff, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .login-sub { font-size: 12px; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; margin-top: -16px; }
+  .login-input { width: 100%; padding: 14px 18px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-family: inherit; font-size: 15px; outline: none; transition: border-color 0.2s; letter-spacing: 0.1em; }
+  .login-input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(168,85,247,0.1); }
+  .login-btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #7c3aed, #2563eb); border: none; border-radius: 12px; color: white; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; transition: opacity 0.2s, transform 0.1s; letter-spacing: 0.05em; }
+  .login-btn:hover { opacity: 0.9; } .login-btn:active { transform: scale(0.98); }
+  .login-err { color: var(--red); font-size: 13px; display: none; }
+
+  /* MAIN APP */
+  #app { display: none; min-height: 100vh; }
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 240px;
+    background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; z-index: 100;
+    padding: 24px 0;
+  }
+  .sidebar-logo { display: flex; align-items: center; gap: 12px; padding: 0 20px 24px; border-bottom: 1px solid var(--border); }
+  .sidebar-logo-icon { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #7c3aed, #2563eb); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .sidebar-logo-text { font-size: 14px; font-weight: 800; letter-spacing: 0.05em; background: linear-gradient(135deg, #fff, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .nav-section { padding: 16px 12px 8px; font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.15em; font-weight: 600; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; margin: 2px 8px; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 14px; font-weight: 500; color: var(--text2); }
+  .nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+  .nav-item.active { background: rgba(168,85,247,0.15); color: var(--purple); }
+  .nav-item .icon { font-size: 18px; width: 22px; text-align: center; }
+  .sidebar-bottom { margin-top: auto; padding: 16px 12px; border-top: 1px solid var(--border); }
+  .logout-btn { width: 100%; padding: 10px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); border-radius: 10px; color: var(--red); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .logout-btn:hover { background: rgba(239,68,68,0.2); }
+
+  .main-content { margin-left: 240px; padding: 28px 32px; min-height: 100vh; }
+  .page { display: none; } .page.active { display: block; }
+  .page-header { margin-bottom: 28px; }
+  .page-title { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+  .page-sub { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+  .stat-icon { font-size: 24px; margin-bottom: 10px; }
+  .stat-val { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; }
+  .stat-label { font-size: 12px; color: var(--text2); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+
+  /* CARDS & FORMS */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+  .card-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap-8px; gap: 8px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 8px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; }
+  input, select, textarea { padding: 12px 14px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: inherit; font-size: 14px; outline: none; transition: border-color 0.2s; width: 100%; }
+  input:focus, select:focus, textarea:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(168,85,247,0.1); }
+  select option { background: #1a1a2e; }
+  textarea { resize: vertical; min-height: 80px; }
+  .badge-input { display: flex; gap: 8px; flex-wrap: wrap; padding: 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; }
+  .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; user-select: none; }
+  .badge.selected { opacity: 1; } .badge:not(.selected) { opacity: 0.35; }
+  .badge-NEW { background: rgba(168,85,247,0.3); color: #c084fc; border: 1px solid rgba(168,85,247,0.4); }
+  .badge-HD { background: rgba(59,130,246,0.3); color: #93c5fd; border: 1px solid rgba(59,130,246,0.4); }
+  .badge-4K { background: rgba(16,185,129,0.3); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.4); }
+  .badge-TOP { background: rgba(245,158,11,0.3); color: #fcd34d; border: 1px solid rgba(245,158,11,0.4); }
+  .badge-18+ { background: rgba(239,68,68,0.3); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); }
+  .badge-VIRAL { background: rgba(236,72,153,0.3); color: #f9a8d4; border: 1px solid rgba(236,72,153,0.4); }
+  .badge-IMAX { background: rgba(20,184,166,0.3); color: #5eead4; border: 1px solid rgba(20,184,166,0.4); }
+
+  .btn { padding: 11px 22px; border-radius: 10px; border: none; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+  .btn-primary { background: linear-gradient(135deg, #7c3aed, #2563eb); color: white; box-shadow: 0 4px 15px rgba(124,58,237,0.3); }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-danger { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+  .btn-danger:hover { background: rgba(239,68,68,0.25); }
+  .btn-secondary { background: rgba(255,255,255,0.06); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+  .btn-sm { padding: 7px 14px; font-size: 12px; border-radius: 8px; }
+  .btn-success { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+  .btn-success:hover { background: rgba(34,197,94,0.25); }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; }
+  th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .thumb-preview { width: 40px; height: 56px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); background: var(--surface2); }
+  .type-badge { padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+  .type-series { background: rgba(168,85,247,0.2); color: #c084fc; }
+  .type-movie { background: rgba(59,130,246,0.2); color: #93c5fd; }
+  .type-short { background: rgba(236,72,153,0.2); color: #f9a8d4; }
+  .category-tag { padding: 3px 10px; border-radius: 20px; background: rgba(255,255,255,0.07); font-size: 11px; border: 1px solid var(--border); }
+  .actions { display: flex; gap: 6px; align-items: center; }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 28px; right: 28px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+  .toast-item { padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); animation: slideIn 0.3s ease; }
+  .toast-success { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: var(--green); }
+  .toast-error { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: var(--red); }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* SEASONS BUILDER */
+  .season-block { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .season-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .season-title { font-size: 13px; font-weight: 700; color: var(--purple); }
+  .ep-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .ep-row input { flex: 1; } .ep-row .ep-dur { max-width: 90px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+    .sidebar.open { transform: translateX(0); }
+    .main-content { margin-left: 0; padding: 16px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+
+  .section-divider { height: 1px; background: var(--border); margin: 24px 0; }
+  .empty-state { text-align: center; padding: 48px; color: var(--text2); font-size: 14px; }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+  .search-bar { display: flex; gap: 12px; margin-bottom: 20px; }
+  .search-bar input { flex: 1; }
+  .filter-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .filter-tab { padding: 7px 14px; border-radius: 20px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--text2); cursor: pointer; transition: all 0.2s; }
+  .filter-tab.active { background: rgba(168,85,247,0.2); border-color: rgba(168,85,247,0.4); color: var(--purple); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🎬</div>
+    <div>
+      <div class="login-title">VIDEO UNIVERSE</div>
+      <div class="login-sub">Admin Panel</div>
+    </div>
+    <input class="login-input" type="password" id="pass-input" placeholder="Admin Password" onkeydown="if(event.key==='Enter')doLogin()" />
+    <div class="login-err" id="login-err">❌ Password ভুল হয়েছে!</div>
+    <button class="login-btn" onclick="doLogin()">🔐 Login করুন</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">🎬</div>
+      <div class="sidebar-logo-text">VU ADMIN</div>
+    </div>
+
+    <div class="nav-section">Main</div>
+    <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span> Dashboard</div>
+    <div class="nav-item" onclick="showPage('categories')"><span class="icon">📁</span> Categories</div>
+    <div class="nav-item" onclick="showPage('content')"><span class="icon">🎬</span> Content</div>
+
+    <div class="nav-section">Manage</div>
+    <div class="nav-item" onclick="showPage('add-category')"><span class="icon">➕</span> Add Category</div>
+    <div class="nav-item" onclick="showPage('add-content')"><span class="icon">🆕</span> Add Content</div>
+    <div class="nav-item" onclick="showPage('settings')"><span class="icon">⚙️</span> Settings</div>
+
+    <div class="sidebar-bottom">
+      <button class="logout-btn" onclick="doLogout()">🚪 Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-title">📊 Dashboard</div>
+        <div class="page-sub">Video Universe এর সব কিছুর overview</div>
+      </div>
+      <div class="stats-grid" id="stats-grid"></div>
+      <div class="card">
+        <div class="card-title">🕐 সাম্প্রতিক Content</div>
+        <div id="recent-content-list"></div>
+      </div>
+    </div>
+
+    <!-- CATEGORIES -->
+    <div class="page" id="page-categories">
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="page-title">📁 Categories</div>
+          <div class="page-sub">সব category দেখুন ও manage করুন</div>
+        </div>
+        <button class="btn btn-primary" onclick="showPage('add-category')">➕ নতুন Category</button>
+      </div>
+      <div id="categories-list"></div>
+    </div>
+
+    <!-- CONTENT LIST -->
+    <div class="page" id="page-content">
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="page-title">🎬 Content Library</div>
+          <div class="page-sub">সব content দেখুন ও manage করুন</div>
+        </div>
+        <button class="btn btn-primary" onclick="showPage('add-content')">🆕 নতুন Content</button>
+      </div>
+      <div class="search-bar">
+        <input type="text" placeholder="🔍 Content search করুন..." oninput="filterContent(this.value)" id="content-search" />
+      </div>
+      <div class="filter-tabs" id="content-filter-tabs"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Thumbnail</th><th>Title</th><th>Category</th><th>Type</th><th>Rating</th><th>Mini App Link</th><th>Actions</th></tr></thead>
+          <tbody id="content-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ADD CATEGORY -->
+    <div class="page" id="page-add-category">
+      <div class="page-header">
+        <div class="page-title" id="cat-form-title">➕ নতুন Category যোগ করুন</div>
+        <div class="page-sub">Main showcase app এ নতুন category add করুন</div>
+      </div>
+      <div class="card">
+        <input type="hidden" id="edit-cat-id" value="" />
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Category নাম *</label>
+            <input type="text" id="cat-name" placeholder="যেমন: English Series" />
+          </div>
+          <div class="form-group">
+            <label>Emoji / Icon</label>
+            <input type="text" id="cat-emoji" placeholder="যেমন: 📺" />
+          </div>
+          <div class="form-group full">
+            <label>Category Thumbnail URL *</label>
+            <input type="url" id="cat-thumb" placeholder="https://example.com/image.jpg" oninput="previewCatThumb()" />
+          </div>
+          <div class="form-group full" id="cat-thumb-preview-wrap" style="display:none">
+            <label>Preview</label>
+            <img id="cat-thumb-preview" style="height:120px;border-radius:10px;object-fit:cover;border:1px solid var(--border);" />
+          </div>
+          <div class="form-group full">
+            <label>Mini App Direct Link (Telegram) *</label>
+            <input type="url" id="cat-miniapp" placeholder="https://t.me/YourBot/app_name" />
+          </div>
+          <div class="form-group full">
+            <label>Description (optional)</label>
+            <textarea id="cat-desc" placeholder="এই category সম্পর্কে কিছু লিখুন..."></textarea>
+          </div>
+        </div>
+        <div style="margin-top:20px;display:flex;gap:12px">
+          <button class="btn btn-primary" onclick="saveCategory()">💾 Save করুন</button>
+          <button class="btn btn-secondary" onclick="resetCategoryForm()">↩️ Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADD CONTENT -->
+    <div class="page" id="page-add-content">
+      <div class="page-header">
+        <div class="page-title" id="content-form-title">🆕 নতুন Content যোগ করুন</div>
+        <div class="page-sub">Category তে নতুন movie/series/video add করুন</div>
+      </div>
+      <div class="card">
+        <input type="hidden" id="edit-content-id" value="" />
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Title *</label>
+            <input type="text" id="c-title" placeholder="Content এর নাম" />
+          </div>
+          <div class="form-group">
+            <label>Category *</label>
+            <select id="c-category"><option value="">-- Category বাছুন --</option></select>
+          </div>
+          <div class="form-group full">
+            <label>Main Thumbnail URL *</label>
+            <input type="url" id="c-thumb" placeholder="https://example.com/poster.jpg" oninput="previewContentThumb()" />
+          </div>
+          <div class="form-group full" id="c-thumb-preview-wrap" style="display:none">
+            <label>Thumbnail Preview</label>
+            <img id="c-thumb-preview" style="height:140px;border-radius:10px;object-fit:cover;border:1px solid var(--border);" />
+          </div>
+          <div class="form-group">
+            <label>Type</label>
+            <select id="c-type" onchange="toggleSeasons()">
+              <option value="movie">🎬 Movie</option>
+              <option value="series">📺 Series</option>
+              <option value="short">⚡ Short/Viral</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Rating (1-5)</label>
+            <input type="number" id="c-rating" min="1" max="5" step="0.1" placeholder="4.8" />
+          </div>
+          <div class="form-group">
+            <label>Year</label>
+            <input type="text" id="c-year" placeholder="2024" />
+          </div>
+          <div class="form-group">
+            <label>Genre</label>
+            <input type="text" id="c-genre" placeholder="Crime, Thriller, Sci-Fi" />
+          </div>
+          <div class="form-group full">
+            <label>Description</label>
+            <textarea id="c-desc" placeholder="Content এর বিবরণ..."></textarea>
+          </div>
+          <div class="form-group full">
+            <label>Mini App / Watch Link (Play button click করলে যাবে)</label>
+            <input type="url" id="c-miniapp" placeholder="https://t.me/YourSeriesBot/app" />
+          </div>
+          <div class="form-group full">
+            <label>Badges</label>
+            <div class="badge-input" id="badge-picker">
+              <span class="badge badge-NEW" onclick="toggleBadge(this,'NEW')">NEW</span>
+              <span class="badge badge-HD selected" onclick="toggleBadge(this,'HD')">HD</span>
+              <span class="badge badge-4K" onclick="toggleBadge(this,'4K')">4K</span>
+              <span class="badge badge-TOP" onclick="toggleBadge(this,'TOP')">TOP</span>
+              <span class="badge badge-18+" onclick="toggleBadge(this,'18+')">18+</span>
+              <span class="badge badge-VIRAL" onclick="toggleBadge(this,'VIRAL')">VIRAL</span>
+              <span class="badge badge-IMAX" onclick="toggleBadge(this,'IMAX')">IMAX</span>
+            </div>
+          </div>
+          <div class="form-group" style="align-items:flex-start;gap:10px">
+            <label>Adult Content?</label>
+            <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:14px;color:var(--text)">
+              <input type="checkbox" id="c-adult" style="width:16px;height:16px" /> হ্যাঁ, এটি 18+ কন্টেন্ট
+            </label>
+          </div>
+        </div>
+
+        <!-- SEASONS (for series) -->
+        <div id="seasons-section" style="display:none">
+          <div class="section-divider"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div class="card-title" style="margin-bottom:0">🗂️ Seasons & Episodes</div>
+            <button class="btn btn-secondary btn-sm" onclick="addSeason()">+ Season যোগ</button>
+          </div>
+          <div id="seasons-builder"></div>
+        </div>
+
+        <div style="margin-top:24px;display:flex;gap:12px">
+          <button class="btn btn-primary" onclick="saveContent()">💾 Save Content</button>
+          <button class="btn btn-secondary" onclick="resetContentForm()">↩️ Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="page-header">
+        <div class="page-title">⚙️ Settings</div>
+        <div class="page-sub">Admin panel configuration</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔑 Password Change</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>নতুন Password</label>
+            <input type="password" id="new-pass" placeholder="নতুন password দিন" />
+          </div>
+          <div class="form-group">
+            <label>Confirm Password</label>
+            <input type="password" id="conf-pass" placeholder="আবার দিন" />
+          </div>
+        </div>
+        <div style="margin-top:16px">
+          <button class="btn btn-primary" onclick="changePass()">🔐 Password Update</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">💾 Data Export / Import</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn btn-success" onclick="exportData()">⬇️ Export JSON</button>
+          <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">⬆️ Import JSON</button>
+          <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)" />
+          <button class="btn btn-danger" onclick="clearAllData()">🗑️ সব Data Delete</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+const ADMIN_PASS_KEY = 'vu_admin_pass';
+const DEFAULT_PASS = 'admin123';
+let categories = JSON.parse(localStorage.getItem('vu_categories') || '[]');
+let contents = JSON.parse(localStorage.getItem('vu_contents') || '[]');
+let seasonCount = 0;
+let currentFilter = 'all';
+
+// ─── LOGIN ───────────────────────────────────────────────────────────────────
+function doLogin() {
+  const pass = document.getElementById('pass-input').value;
+  const stored = localStorage.getItem(ADMIN_PASS_KEY) || DEFAULT_PASS;
+  if (pass === stored) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    renderDashboard();
+  } else {
+    const err = document.getElementById('login-err');
+    err.style.display = 'block';
+    setTimeout(() => err.style.display = 'none', 3000);
+  }
+}
+
+function doLogout() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('pass-input').value = '';
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.toLowerCase().includes(id.replace('-',' '))) n.classList.add('active');
+  });
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'categories') renderCategoriesPage();
+  if (id === 'content') renderContentPage();
+  if (id === 'add-content') populateCategorySelect();
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className = `toast-item toast-${type}`;
+  el.textContent = msg;
+  t.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ─── SAVE ────────────────────────────────────────────────────────────────────
+function saveToStorage() {
+  localStorage.setItem('vu_categories', JSON.stringify(categories));
+  localStorage.setItem('vu_contents', JSON.stringify(contents));
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const sg = document.getElementById('stats-grid');
+  sg.innerHTML = `
+    <div class="stat-card"><div class="stat-icon">📁</div><div class="stat-val">${categories.length}</div><div class="stat-label">Total Categories</div></div>
+    <div class="stat-card"><div class="stat-icon">🎬</div><div class="stat-val">${contents.length}</div><div class="stat-label">Total Content</div></div>
+    <div class="stat-card"><div class="stat-icon">📺</div><div class="stat-val">${contents.filter(c=>c.type==='series').length}</div><div class="stat-label">Series</div></div>
+    <div class="stat-card"><div class="stat-icon">🔞</div><div class="stat-val">${contents.filter(c=>c.isAdult).length}</div><div class="stat-label">Adult Content</div></div>
+  `;
+  const rc = document.getElementById('recent-content-list');
+  const recent = [...contents].reverse().slice(0, 5);
+  if (recent.length === 0) { rc.innerHTML = '<div class="empty-state"><div class="icon">📭</div>এখনো কোনো content নেই</div>'; return; }
+  rc.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Thumbnail</th><th>Title</th><th>Category</th><th>Type</th></tr></thead><tbody>
+    ${recent.map(c => `<tr>
+      <td><img class="thumb-preview" src="${c.imageUrl||'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2256%22><rect fill=%22%23222%22 width=%2240%22 height=%2256%22/></svg>'}" /></td>
+      <td>${c.title}</td><td><span class="category-tag">${c.category}</span></td>
+      <td><span class="type-badge type-${c.type}">${c.type}</span></td>
+    </tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+// ─── CATEGORIES PAGE ─────────────────────────────────────────────────────────
+function renderCategoriesPage() {
+  const el = document.getElementById('categories-list');
+  if (categories.length === 0) { el.innerHTML = '<div class="empty-state"><div class="icon">📭</div>এখনো কোনো category নেই। <br/><br/><button class="btn btn-primary" onclick="showPage(\'add-category\')">➕ প্রথম Category যোগ করুন</button></div>'; return; }
+  el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Thumbnail</th><th>Name</th><th>Mini App Link</th><th>Content Count</th><th>Actions</th></tr></thead><tbody>
+    ${categories.map(cat => `<tr>
+      <td><img class="thumb-preview" src="${cat.imageUrl||''}" onerror="this.src=''" /></td>
+      <td><strong>${cat.emoji||''} ${cat.name}</strong>${cat.desc ? `<br/><span style="font-size:11px;color:var(--text2)">${cat.desc.substring(0,50)}...</span>` : ''}</td>
+      <td style="max-width:180px"><a href="${cat.miniappLink||'#'}" target="_blank" style="color:var(--purple);font-size:12px;word-break:break-all">${cat.miniappLink||'—'}</a></td>
+      <td>${contents.filter(c=>c.category===cat.name).length} টি</td>
+      <td class="actions">
+        <button class="btn btn-secondary btn-sm" onclick="editCategory('${cat.id}')">✏️ Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCategory('${cat.id}')">🗑️</button>
+      </td>
+    </tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+// ─── CATEGORY FORM ────────────────────────────────────────────────────────────
+function previewCatThumb() {
+  const url = document.getElementById('cat-thumb').value;
+  const wrap = document.getElementById('cat-thumb-preview-wrap');
+  if (url) { wrap.style.display = 'block'; document.getElementById('cat-thumb-preview').src = url; }
+  else { wrap.style.display = 'none'; }
+}
+
+function saveCategory() {
+  const name = document.getElementById('cat-name').value.trim();
+  const imageUrl = document.getElementById('cat-thumb').value.trim();
+  const miniappLink = document.getElementById('cat-miniapp').value.trim();
+  const emoji = document.getElementById('cat-emoji').value.trim();
+  const desc = document.getElementById('cat-desc').value.trim();
+  const editId = document.getElementById('edit-cat-id').value;
+
+  if (!name || !imageUrl) { toast('Category নাম ও Thumbnail দিন!', 'error'); return; }
+
+  if (editId) {
+    const idx = categories.findIndex(c => c.id === editId);
+    if (idx > -1) { categories[idx] = { ...categories[idx], name, imageUrl, miniappLink, emoji, desc }; toast('✅ Category update হয়েছে!'); }
+  } else {
+    if (categories.find(c => c.name === name)) { toast('এই নামে category ইতিমধ্যে আছে!', 'error'); return; }
+    categories.push({ id: 'cat_' + Date.now(), name, imageUrl, miniappLink, emoji, desc });
+    toast('✅ Category সফলভাবে যোগ হয়েছে!');
+  }
+  saveToStorage();
+  resetCategoryForm();
+  showPage('categories');
+}
+
+function resetCategoryForm() {
+  ['cat-name','cat-thumb','cat-miniapp','cat-emoji','cat-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('edit-cat-id').value = '';
+  document.getElementById('cat-form-title').textContent = '➕ নতুন Category যোগ করুন';
+  document.getElementById('cat-thumb-preview-wrap').style.display = 'none';
+}
+
+function editCategory(id) {
+  const cat = categories.find(c => c.id === id);
+  if (!cat) return;
+  document.getElementById('cat-name').value = cat.name || '';
+  document.getElementById('cat-thumb').value = cat.imageUrl || '';
+  document.getElementById('cat-miniapp').value = cat.miniappLink || '';
+  document.getElementById('cat-emoji').value = cat.emoji || '';
+  document.getElementById('cat-desc').value = cat.desc || '';
+  document.getElementById('edit-cat-id').value = id;
+  document.getElementById('cat-form-title').textContent = '✏️ Category Edit করুন';
+  previewCatThumb();
+  showPage('add-category');
+}
+
+function deleteCategory(id) {
+  if (!confirm('এই category delete করবেন? এর সব content-ও delete হবে।')) return;
+  const cat = categories.find(c => c.id === id);
+  if (cat) { contents = contents.filter(c => c.category !== cat.name); }
+  categories = categories.filter(c => c.id !== id);
+  saveToStorage();
+  toast('🗑️ Category delete হয়েছে');
+  renderCategoriesPage();
+}
+
+// ─── CONTENT PAGE ─────────────────────────────────────────────────────────────
+function renderContentPage() {
+  const tabs = document.getElementById('content-filter-tabs');
+  tabs.innerHTML = `<div class="filter-tab ${currentFilter==='all'?'active':''}" onclick="setFilter('all')">🌐 সব</div>` +
+    categories.map(c => `<div class="filter-tab ${currentFilter===c.name?'active':''}" onclick="setFilter('${c.name}')">${c.emoji||''} ${c.name}</div>`).join('');
+  renderContentTable(contents);
+}
+
+function setFilter(cat) { currentFilter = cat; renderContentPage(); filterContent(document.getElementById('content-search')?.value || ''); }
+
+function filterContent(q) {
+  let filtered = contents;
+  if (currentFilter !== 'all') filtered = filtered.filter(c => c.category === currentFilter);
+  if (q) filtered = filtered.filter(c => c.title.toLowerCase().includes(q.toLowerCase()));
+  renderContentTable(filtered);
+}
+
+function renderContentTable(list) {
+  const tb = document.getElementById('content-tbody');
+  if (list.length === 0) { tb.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">📭</div>কোনো content পাওয়া যায়নি</div></td></tr>'; return; }
+  tb.innerHTML = list.map(c => `<tr>
+    <td><img class="thumb-preview" src="${c.imageUrl||''}" onerror="this.style.background='#333'" /></td>
+    <td><strong>${c.title}</strong>${c.isAdult?'<span class="type-badge" style="margin-left:6px;background:rgba(239,68,68,0.2);color:#fca5a5">18+</span>':''}</td>
+    <td><span class="category-tag">${c.category}</span></td>
+    <td><span class="type-badge type-${c.type}">${c.type}</span></td>
+    <td>⭐ ${c.rating}</td>
+    <td style="max-width:150px"><a href="${c.miniappLink||'#'}" target="_blank" style="color:var(--purple);font-size:11px;word-break:break-all">${c.miniappLink ? '🔗 Link' : '—'}</a></td>
+    <td class="actions">
+      <button class="btn btn-secondary btn-sm" onclick="editContent('${c.id}')">✏️</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteContent('${c.id}')">🗑️</button>
+    </td>
+  </tr>`).join('');
+}
+
+// ─── CONTENT FORM ─────────────────────────────────────────────────────────────
+function populateCategorySelect() {
+  const sel = document.getElementById('c-category');
+  sel.innerHTML = '<option value="">-- Category বাছুন --</option>' + categories.map(c => `<option value="${c.name}">${c.emoji||''} ${c.name}</option>`).join('');
+}
+
+function previewContentThumb() {
+  const url = document.getElementById('c-thumb').value;
+  const wrap = document.getElementById('c-thumb-preview-wrap');
+  if (url) { wrap.style.display = 'block'; document.getElementById('c-thumb-preview').src = url; }
+  else { wrap.style.display = 'none'; }
+}
+
+function toggleBadge(el, badge) { el.classList.toggle('selected'); }
+
+function getSelectedBadges() {
+  return [...document.querySelectorAll('#badge-picker .badge.selected')].map(b => b.textContent.trim());
+}
+
+function toggleSeasons() {
+  const type = document.getElementById('c-type').value;
+  document.getElementById('seasons-section').style.display = type === 'series' ? 'block' : 'none';
+}
+
+function addSeason() {
+  seasonCount++;
+  const builder = document.getElementById('seasons-builder');
+  const div = document.createElement('div');
+  div.className = 'season-block';
+  div.id = `season-${seasonCount}`;
+  div.innerHTML = `
+    <div class="season-header">
+      <div class="season-title">Season ${seasonCount}</div>
+      <button class="btn btn-danger btn-sm" onclick="this.closest('.season-block').remove()">Remove</button>
+    </div>
+    <div class="episodes-list" id="eps-${seasonCount}">
+      <div class="ep-row">
+        <input type="text" placeholder="Episode 1 - Title" class="ep-title" />
+        <input type="text" class="ep-dur" placeholder="45m" />
+        <button class="btn btn-secondary btn-sm" onclick="addEpisode(${seasonCount})">+ Ep</button>
+      </div>
+    </div>`;
+  builder.appendChild(div);
+}
+
+function addEpisode(sn) {
+  const epList = document.getElementById(`eps-${sn}`);
+  const lastBtn = epList.querySelector('.ep-row:last-child button');
+  if (lastBtn) lastBtn.style.display = 'none';
+  const div = document.createElement('div');
+  div.className = 'ep-row';
+  const epNum = epList.querySelectorAll('.ep-row').length + 1;
+  div.innerHTML = `<input type="text" placeholder="Episode ${epNum} - Title" class="ep-title" /><input type="text" class="ep-dur" placeholder="45m" /><button class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">×</button>`;
+  epList.appendChild(div);
+}
+
+function getSeasonsData() {
+  const seasons = [];
+  document.querySelectorAll('.season-block').forEach((block, si) => {
+    const episodes = [];
+    block.querySelectorAll('.ep-row').forEach((row, ei) => {
+      const title = row.querySelector('.ep-title')?.value.trim();
+      const dur = row.querySelector('.ep-dur')?.value.trim() || '45m';
+      if (title) episodes.push({ id: `s${si+1}e${ei+1}`, title, duration: dur });
+    });
+    seasons.push({ seasonNumber: si + 1, episodes });
+  });
+  return seasons;
+}
+
+function saveContent() {
+  const title = document.getElementById('c-title').value.trim();
+  const category = document.getElementById('c-category').value;
+  const imageUrl = document.getElementById('c-thumb').value.trim();
+  const type = document.getElementById('c-type').value;
+  const rating = parseFloat(document.getElementById('c-rating').value) || 4.5;
+  const year = document.getElementById('c-year').value.trim() || new Date().getFullYear().toString();
+  const genre = document.getElementById('c-genre').value.trim() || 'General';
+  const desc = document.getElementById('c-desc').value.trim();
+  const miniappLink = document.getElementById('c-miniapp').value.trim();
+  const isAdult = document.getElementById('c-adult').checked;
+  const badges = getSelectedBadges();
+  const seasons = type === 'series' ? getSeasonsData() : [];
+  const editId = document.getElementById('edit-content-id').value;
+
+  if (!title || !category || !imageUrl) { toast('Title, Category ও Thumbnail দিন!', 'error'); return; }
+
+  const obj = { title, category, imageUrl, type, rating, year, genre, description: desc, miniappLink, isAdult, badges, seasons, episodes: seasons[0]?.episodes || [], viewers: Math.floor(Math.random() * 50000) + 1000 };
+
+  if (editId) {
+    const idx = contents.findIndex(c => c.id === editId);
+    if (idx > -1) { contents[idx] = { ...contents[idx], ...obj }; toast('✅ Content update হয়েছে!'); }
+  } else {
+    obj.id = 'cnt_' + Date.now();
+    contents.push(obj);
+    toast('✅ Content সফলভাবে যোগ হয়েছে!');
+  }
+  saveToStorage();
+  resetContentForm();
+  showPage('content');
+}
+
+function resetContentForm() {
+  ['c-title','c-thumb','c-miniapp','c-genre','c-desc','c-year'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('c-rating').value = '';
+  document.getElementById('c-category').value = '';
+  document.getElementById('c-type').value = 'movie';
+  document.getElementById('c-adult').checked = false;
+  document.getElementById('edit-content-id').value = '';
+  document.getElementById('content-form-title').textContent = '🆕 নতুন Content যোগ করুন';
+  document.getElementById('c-thumb-preview-wrap').style.display = 'none';
+  document.getElementById('seasons-section').style.display = 'none';
+  document.getElementById('seasons-builder').innerHTML = '';
+  seasonCount = 0;
+  document.querySelectorAll('#badge-picker .badge').forEach(b => { b.classList.remove('selected'); if (b.textContent.trim() === 'HD') b.classList.add('selected'); });
+}
+
+function editContent(id) {
+  const c = contents.find(x => x.id === id);
+  if (!c) return;
+  populateCategorySelect();
+  document.getElementById('c-title').value = c.title || '';
+  document.getElementById('c-thumb').value = c.imageUrl || '';
+  document.getElementById('c-miniapp').value = c.miniappLink || '';
+  document.getElementById('c-genre').value = c.genre || '';
+  document.getElementById('c-desc').value = c.description || '';
+  document.getElementById('c-year').value = c.year || '';
+  document.getElementById('c-rating').value = c.rating || '';
+  document.getElementById('c-category').value = c.category || '';
+  document.getElementById('c-type').value = c.type || 'movie';
+  document.getElementById('c-adult').checked = !!c.isAdult;
+  document.getElementById('edit-content-id').value = id;
+  document.getElementById('content-form-title').textContent = '✏️ Content Edit করুন';
+  previewContentThumb();
+  toggleSeasons();
+  // Badges
+  document.querySelectorAll('#badge-picker .badge').forEach(b => {
+    b.classList.toggle('selected', (c.badges || []).includes(b.textContent.trim()));
+  });
+  // Seasons
+  if (c.type === 'series' && c.seasons?.length) {
+    const builder = document.getElementById('seasons-builder');
+    builder.innerHTML = '';
+    seasonCount = 0;
+    c.seasons.forEach(s => {
+      seasonCount++;
+      const div = document.createElement('div');
+      div.className = 'season-block';
+      div.id = `season-${seasonCount}`;
+      div.innerHTML = `<div class="season-header"><div class="season-title">Season ${s.seasonNumber}</div><button class="btn btn-danger btn-sm" onclick="this.closest('.season-block').remove()">Remove</button></div>
+        <div class="episodes-list" id="eps-${seasonCount}">
+          ${s.episodes.map((ep, ei) => `<div class="ep-row"><input type="text" class="ep-title" value="${ep.title}" placeholder="Episode title" /><input type="text" class="ep-dur" value="${ep.duration}" placeholder="45m" />${ei===0?`<button class="btn btn-secondary btn-sm" onclick="addEpisode(${seasonCount})">+ Ep</button>`:'<button class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">×</button>'}</div>`).join('')}
+        </div>`;
+      builder.appendChild(div);
+    });
+  }
+  showPage('add-content');
+}
+
+function deleteContent(id) {
+  if (!confirm('এই content delete করবেন?')) return;
+  contents = contents.filter(c => c.id !== id);
+  saveToStorage();
+  toast('🗑️ Content delete হয়েছে');
+  renderContentPage();
+}
+
+// ─── SETTINGS ────────────────────────────────────────────────────────────────
+function changePass() {
+  const np = document.getElementById('new-pass').value;
+  const cp = document.getElementById('conf-pass').value;
+  if (!np) { toast('নতুন password দিন!', 'error'); return; }
+  if (np !== cp) { toast('Password match করছে না!', 'error'); return; }
+  localStorage.setItem(ADMIN_PASS_KEY, np);
+  toast('✅ Password update হয়েছে!');
+  document.getElementById('new-pass').value = '';
+  document.getElementById('conf-pass').value = '';
+}
+
+function exportData() {
+  const data = { categories, contents, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `video-universe-data-${Date.now()}.json`;
+  a.click();
+  toast('✅ Data export হয়েছে!');
+}
+
+function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.categories) categories = data.categories;
+      if (data.contents) contents = data.contents;
+      saveToStorage();
+      toast('✅ Data import সফল হয়েছে!');
+      renderDashboard();
+    } catch { toast('❌ Invalid JSON file!', 'error'); }
+  };
+  reader.readAsText(file);
+}
+
+function clearAllData() {
+  if (!confirm('⚠️ সব data delete হয়ে যাবে! নিশ্চিত?')) return;
+  categories = []; contents = [];
+  saveToStorage();
+  toast('🗑️ সব data delete হয়েছে');
+  renderDashboard();
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+document.getElementById('pass-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+</script>
+</body>
+</html>
